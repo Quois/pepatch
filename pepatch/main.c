@@ -223,6 +223,8 @@ int main(int argc, char** argv) {
 	pep_section new_section = pep_add_section(mapped, ".test", 0x1000, 0x60000020);
 	pep_section new_section2 = pep_add_section(mapped, ".poop", 0x1000, 0x60000020);
 
+	//size_t imp = pep_add_import(mapped, "KERNEL32.DLL", "LoadLibraryExW");
+
 	pep_pe* unmapped = pep_rebuild_pe_to_memory(mapped);
 	pep_free_mapped_pe(mapped);
 

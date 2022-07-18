@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdbool.h>
+#include <string.h>
 
 #define RVA32(base, rva) ((uint32_t)base + rva)
 #define RVA64(base, rva) ((uint64_t)base + rva)
@@ -40,6 +42,9 @@ pep_mapped_pe* pep_map_pe(pep_pe* pe);
 
 size_t pep_update_virtual_size(pep_mapped_pe* pe, size_t new_size);
 pep_section pep_add_section(pep_mapped_pe* pe, const char* name, size_t size, uint32_t characteristics);
+size_t pep_add_import(pep_mapped_pe* pe, const char* library, const char* function);
+
+void* pep_rva(pep_mapped_pe* pe, size_t rva);
 
 pep_pe* pep_rebuild_pe_to_memory(pep_mapped_pe* pe);
 size_t pep_pe_to_file(pep_pe* pe, const char* path);

@@ -141,6 +141,65 @@ pep_section pep_add_section(pep_mapped_pe* pe, const char* name, size_t size, ui
 	return section_data;
 }
 
+//https://docs.microsoft.com/en-us/archive/msdn-magazine/2002/march/inside-windows-an-in-depth-look-into-the-win32-portable-executable-file-format-part-2
+
+// Returns new RVA to IAT entry
+// If function is already imported it will return existing RVA
+size_t pep_add_import(pep_mapped_pe* pe, const char* library, const char* function)
+{
+	if (!pe) return NULL;
+
+	bool lib_exists = false;
+
+	PIMAGE_IMPORT_DESCRIPTOR lib_descriptor = NULL;
+
+	PIMAGE_NT_HEADERS p_nt_headers = NT_HEADERS(pe->base);
+
+	IMAGE_DATA_DIRECTORY imports = p_nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+	PIMAGE_IMPORT_DESCRIPTOR descriptor = RVA(pe->base, imports.VirtualAddress);
+
+	while (descriptor->Name != NULL) {
+		PIMAGE_THUNK_DATA orig_thunk = RVA(pe->base, descriptor->OriginalFirstThunk);
+		PIMAGE_THUNK_DATA thunk = RVA(pe->base, descriptor->FirstThunk);
+		int n_thunk = 0;
+
+		const char* lib_name = RVA(pe->base, descriptor->Name);
+		if (strcmp(strlwr(lib_name), strlwr(library)) == 0) {
+			lib_exists = true;
+			lib_descriptor = descriptor;
+
+
+			while (orig_thunk->u1.AddressOfData != NULL) {
+
+				PIMAGE_IMPORT_BY_NAME import_by_name = RVA(pe->base, orig_thunk->u1.AddressOfData);
+
+				if (strcmp(strlwr(import_by_name->Name), strlwr(function)) == 0) {
+					return (size_t)thunk - (size_t)pe->base; /* RVA of IAT at index n_thunk, points to function pointer of import */
+				}
+				orig_thunk++;
+				thunk++;
+				n_thunk++;
+			}
+
+		}
+
+		descriptor++;
+	}
+
+	if (!lib_exists) {
+
+	}
+
+	// W.I.P
+
+	return 0;
+}
+
+void* pep_rva(pep_mapped_pe* pe, size_t rva)
+{
+	return RVA(pe->base, rva);
+}
+
 pep_pe* pep_rebuild_pe_to_memory(pep_mapped_pe* pe)
 {
 	if (!pe) return;
